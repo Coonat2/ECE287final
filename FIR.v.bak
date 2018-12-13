@@ -1,0 +1,47 @@
+module FIR(
+input clk,
+input rst,
+input AUD_BCLK,
+input AUD_DACLRCK,
+input AUD_ADCLRCK,
+input [31:0]audioIn,
+
+output reg [31:0]audioOut
+);
+
+
+reg [31:0]lastAudioIn;
+
+wire signed [31:0]leftAudio = { {16{audioIn[31]}}, audioIn[31:16]};
+reg signed [31:0]delayedLeft;
+reg signed [31:0]filtLeft;
+
+wire signed [31:0]rightAudio = { {16{audioIn[15]}}, audioIn[15:0]};
+reg signed [31:0]delayedRight;
+reg signed [31:0]filtRight;
+
+always @(*)
+begin
+	audioOut[31:16] = filtLeft[15:0];
+	audioOut[15:0] =  filtRight[15:0];
+end
+
+always @(posedge AUD_BCLK)
+begin
+	if (AUD_DACLRCK == 1)
+		begin
+			delayedLeft <= leftAudio;
+			delayedRight <= rightAudio;
+		end
+end
+
+always @(posedge AUD_BCLK)
+begin
+	if (AUD_DACLRCK == 1)
+		begin
+			filtLeft <= leftAudio + delayedLeft;
+			filtRight <= rightAudio + delayedRight;
+		end
+end
+
+endmodule
